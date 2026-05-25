@@ -30,10 +30,24 @@ targets:
       base:
         CODE_SIGNING_ALLOWED: "NO"
         CODE_SIGNING_REQUIRED: "NO"
+        GENERATE_INFOPLIST_FILE: YES
+  AcmeBankUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [AcmeBankUITests]
+    dependencies:
+      - target: AcmeBank
+    settings:
+      base:
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   AcmeBank:
     build:
       targets: { AcmeBank: all }
     test:
-      targets: [AcmeBankTests]
+      targets:
+        - AcmeBankTests
+        - AcmeBankUITests
       parallelizable: false

@@ -3,8 +3,7 @@
 ## Overview
 AcmeBank is an iOS 17+ banking app built in Swift/SwiftUI. It lets customers
 view accounts and transactions, initiate transfers, manage cards, and pay bills —
-all secured via Okta OIDC authentication. This repo currently contains the
-bootstrap Hello-World scaffold; all feature work lands in follow-up PRs.
+all secured via Okta OIDC authentication.
 
 ## Tech Stack
 | Item | Value |
@@ -45,24 +44,30 @@ xcodebuild test \
 ## Key Directory Structure
 ```
 AcmeBank/
-├── App/              # @main entry + root ContentView (implemented)
+├── App/              # @main entry (AcmeBankApp.swift → LoginView root)
 ├── Core/             # Auth, Networking, Notifications, Extensions (deferred)
 ├── Domain/           # Models + Repository protocols (deferred)
 ├── Data/             # Remote + Mock repository implementations (deferred)
-├── Features/         # Login, Home, Accounts, Transfer, Cards, More (deferred)
+├── Features/
+│   └── Login/        # LoginView, LoginViewModel, LoginView+Styling (implemented)
 ├── DesignSystem/     # Colors, Typography, Assets (deferred)
 └── Resources/        # Assets.xcassets, PrivacyInfo.xcprivacy
 AcmeBankTests/        # XCTest unit tests
-AcmeBankUITests/      # XCUITest critical-flow tests (deferred)
+  └── Features/Login/ # LoginViewModelTests, LoginViewSnapshotTests
+AcmeBankUITests/      # XCUITest critical-flow tests
+  └── Features/Login/ # LoginViewUITests
 project.yml           # XcodeGen spec — source of truth
 setup.sh              # one-shot materialisation script
 ```
 
-## Planned Architecture
+## Current App Entry Point
+- `AcmeBankApp.swift` — `@main` SwiftUI App, `WindowGroup { LoginView(...) }`
+- `AcmeBank/Features/Login/LoginView.swift` — Login screen (root scene)
+- `AcmeBank/Features/Login/LoginViewModel.swift` — ViewModel with stubbed `onSignIn`
+- `AcmeBank/Features/Login/LoginView+Styling.swift` — Local design tokens (until DesignSystem PR ships)
+- `AcmeBank/App/ContentView.swift` — Demoted placeholder; retained for legacy compile compatibility
 
-### Entry point (implemented in this PR)
-- `AcmeBankApp.swift` — `@main` SwiftUI App, `WindowGroup { ContentView() }`
-- `ContentView.swift` — Hello World placeholder
+## Planned Architecture
 
 ### MVVM + Coordinator (deferred — future PR)
 - `AppCoordinator` (ObservableObject) observed by `RootView`
@@ -75,6 +80,7 @@ setup.sh              # one-shot materialisation script
 - `AuthService` (`okta-mobile-swift` 2.x) — sign-in / sign-out / token refresh
 - `KeychainStore` — secure token persistence (use `kSecUseDataProtectionKeychain: true` in all Keychain queries for CI compatibility)
 - `UserSession` — value type passed through coordinators; never stored in UserDefaults
+- `LoginViewModel.onSignIn` currently stubbed — real Okta `DirectAuthenticationFlow` wired in companion story
 
 ### Networking (deferred — future PR)
 - `APIClient` — `URLSession` + async/await; decodes JSON with snake_case + ISO8601
@@ -91,33 +97,41 @@ setup.sh              # one-shot materialisation script
 ### Design System (deferred — future PR)
 - `Colors.swift` — `Color.acmeNavy`, `.acmeBackground`, `.acmeGreen`, etc.
 - `Typography.swift` — `Font.acmeTitle`, `.acmeHeadline`, `.acmeBody`, etc.
+- Current literals in `LoginView+Styling.swift` carry TODO comments to migrate here
 
 ### Internal Notifications (deferred — future PR)
 - `AppNotification` — typed `Notification.Name` constants
 - `NotificationPublisher` — static `post(_:userInfo:)` helper
 - Subscriptions live in coordinators — never in ViewModels
 
-### XCUITest critical flows (deferred — future PR)
-- `LoginUITests`, `TransferUITests` — launch with `-UITestMode YES`, inject mocks
+### XCUITest critical flows
+- `AcmeBankUITests/Features/Login/LoginViewUITests.swift` — launch, field entry, button tap (implemented)
+- Future: `TransferUITests` — launch with `-UITestMode YES`, inject mocks
 
 ## Keychain Notes (for future feature agents)
 Every Keychain query MUST include `kSecUseDataProtectionKeychain: true` so
 tests pass in CI's `CODE_SIGNING_ALLOWED=NO` simulator environment.
 
+## XCUITest Notes
+- Do NOT use `swift-snapshot-testing` (no committed PNGs → always fails on CI).
+  Use `UIHostingController` + structural assertions for view-state tests.
+- Access elements by `accessibilityIdentifier`, not display strings.
+- UI tests launch the real app bundle; use `-UITestMode YES` args to inject mocks for network-dependent tests.
+
 ## Deferred Work
 - MVVM + Coordinator wiring (AppCoordinator, LoginCoordinator, TabBarCoordinator…)
 - Okta OIDC auth (AuthService, KeychainStore, UserSession, okta-mobile-swift SPM)
+- Real `LoginViewModel.signIn` Okta integration (stub ships in this PR)
 - Networking layer (APIClient, APIRouter, APIError, RequestInterceptor)
 - Domain models (Account, Transaction, Customer, TransferRequest)
 - Repository protocols + Remote + Mock implementations
-- All feature screens (Login, Home, Accounts, Transfer, Cards, More)
-- Design system (Colors, Typography)
+- Feature screens (Home, Accounts, Transfer, Cards, More)
+- Design system (Colors, Typography) — replace literals in `LoginView+Styling.swift`
 - Internal notifications (AppNotification, NotificationPublisher)
-- XCUITest target + critical-flow UI tests
 - SwiftLint config (`.swiftlint.yml`) + `-warnings-as-errors` xcconfig
-- GitHub Actions CI workflow (`ios-build.yml`)
 - Localisation (`Localizable.strings`)
 - Okta.plist / `.plist.example` + `API_BASE_URL` xcconfig injection
+- `AcmeBankLogo` image asset (real brand asset; placeholder imageset ships in this PR)
 
 ## Git Workflow
 
